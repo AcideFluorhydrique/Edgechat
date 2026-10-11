@@ -1,5 +1,5 @@
 <script setup>
-import { nextTick, onMounted, ref, useAttrs, watch } from 'vue';
+import { onMounted, ref, useAttrs, watch } from 'vue';
 
 const props = defineProps({
   modelValue: {
@@ -23,14 +23,14 @@ const textareaEl = ref(null);
 function syncHeight() {
   if (!props.autoGrow || !textareaEl.value) return;
   textareaEl.value.style.height = 'auto';
-  const nextHeight = props.maxHeight > 0 ? Math.min(textareaEl.value.scrollHeight, props.maxHeight) : textareaEl.value.scrollHeight;
+  const contentHeight = textareaEl.value.scrollHeight;
+  const nextHeight = props.maxHeight > 0 ? Math.min(contentHeight, props.maxHeight) : contentHeight;
   textareaEl.value.style.height = `${nextHeight}px`;
-  textareaEl.value.style.overflowY = props.maxHeight > 0 && textareaEl.value.scrollHeight > props.maxHeight ? 'auto' : 'hidden';
+  textareaEl.value.style.overflowY = props.maxHeight > 0 && contentHeight > props.maxHeight ? 'auto' : 'hidden';
 }
 
 function handleInput(event) {
   emit('update:modelValue', event.target.value);
-  syncHeight();
 }
 
 function focus() {
@@ -39,7 +39,8 @@ function focus() {
 
 defineExpose({ element: textareaEl, focus });
 
-watch(() => props.modelValue, () => nextTick(syncHeight));
+// 等 v-model 写回 DOM 后统一测量，输入与外部清空/恢复草稿都只触发一次布局读取。
+watch(() => props.modelValue, syncHeight, { flush: 'post' });
 onMounted(syncHeight);
 </script>
 

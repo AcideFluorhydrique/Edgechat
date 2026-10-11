@@ -10,6 +10,7 @@ import {
   ENGLISH_LOCALE,
   formatDate,
   formatDateTime,
+  formatTime,
   getLocale,
   parseDateValue,
   setLocale,
@@ -100,6 +101,38 @@ test('日期格式跟随当前语言', async () => {
   assert.equal(english, new Intl.DateTimeFormat(ENGLISH_LOCALE, options).format(value));
   assert.notEqual(chinese, english);
   await setLocale(CHINESE_LOCALE);
+});
+
+test('常用日期格式复用固定三个 formatter，切换语言失效，自定义选项保持即时语义', async () => {
+  const Native = Intl.DateTimeFormat;
+  let constructions = 0;
+  Intl.DateTimeFormat = new Proxy(Native, {
+    construct(target, args) {
+      constructions++;
+      return Reflect.construct(target, args);
+    }
+  });
+  const value = '2026-10-11T02:03:00Z';
+  try {
+    for (const locale of ['zh-TW', 'en-US', 'zh-CN']) {
+      await setLocale(locale);
+      const before = constructions;
+      for (let i = 0; i < 500; i++) {
+        formatDateTime(value);
+        formatDate(value);
+        formatTime(value);
+      }
+      assert.equal(constructions - before, 3);
+      assert.equal(formatTime(value), new Native(locale, { hour: '2-digit', minute: '2-digit' }).format(new Date(value)));
+    }
+    const options = { hour: 'numeric', timeZone: 'UTC' };
+    assert.equal(formatTime(value, options), new Native('zh-CN', options).format(new Date(value)));
+    options.timeZone = 'Asia/Shanghai';
+    assert.equal(formatTime(value, options), new Native('zh-CN', options).format(new Date(value)));
+    assert.equal(formatTime('invalid'), '');
+  } finally {
+    Intl.DateTimeFormat = Native;
+  }
 });
 
 test('D1 时间按 UTC 解析并转换为客户端时区', async () => {

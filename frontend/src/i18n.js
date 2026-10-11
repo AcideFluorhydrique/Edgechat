@@ -104,19 +104,26 @@ export function parseDateValue(value) {
   return new Date(normalizedValue);
 }
 
-export function formatDateTime(value, options = { dateStyle: 'medium', timeStyle: 'short' }) {
+// 只缓存三个固定展示格式；自定义 options 保持原语义，不引入无限增长的全局缓存。
+const dateTimeFormatter = computed(() => new Intl.DateTimeFormat(locale.value, { dateStyle: 'medium', timeStyle: 'short' }));
+const dateFormatter = computed(() => new Intl.DateTimeFormat(locale.value, { dateStyle: 'medium' }));
+const timeFormatter = computed(() => new Intl.DateTimeFormat(locale.value, { hour: '2-digit', minute: '2-digit' }));
+
+function formatWith(value, options, formatter) {
   const date = parseDateValue(value);
-  return Number.isNaN(date.getTime()) ? '' : new Intl.DateTimeFormat(locale.value, options).format(date);
+  return Number.isNaN(date.getTime()) ? '' : (options === undefined ? formatter.value : new Intl.DateTimeFormat(locale.value, options)).format(date);
 }
 
-export function formatDate(value, options = { dateStyle: 'medium' }) {
-  const date = parseDateValue(value);
-  return Number.isNaN(date.getTime()) ? '' : new Intl.DateTimeFormat(locale.value, options).format(date);
+export function formatDateTime(value, options) {
+  return formatWith(value, options, dateTimeFormatter);
 }
 
-export function formatTime(value, options = { hour: '2-digit', minute: '2-digit' }) {
-  const date = parseDateValue(value);
-  return Number.isNaN(date.getTime()) ? '' : new Intl.DateTimeFormat(locale.value, options).format(date);
+export function formatDate(value, options) {
+  return formatWith(value, options, dateFormatter);
+}
+
+export function formatTime(value, options) {
+  return formatWith(value, options, timeFormatter);
 }
 
 export function compareLocalized(left, right) {

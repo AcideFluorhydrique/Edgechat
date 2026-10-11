@@ -190,11 +190,13 @@ test("资料入口与纯文本模板不改变消息菜单，设置头像请求�
 	assert.match(dialog, /aria-labelledby/);
 	assert.match(dialog, /safe-area-inset-bottom/);
 	const page = read("pages/ChatPage.vue");
-	assert.match(page, /@click="openSenderProfile\(msg.sender\)"/);
+	const row = read("components/chat/MessageRow.vue");
+	assert.match(row, /@click="emit\('profile', msg.sender\)"/);
+	assert.match(page, /@profile="openSenderProfile"/);
 	assert.match(page, /@click="openLocalUserProfile\(activeRoom.otherUser\)"/);
 	assert.match(page, /@open-profile="openLocalUserProfile"/);
 	assert.match(page, /@contextmenu="openMessageContextMenu/);
-	assert.match(page, /@pointerdown="startMessageLongPress/);
+	assert.match(page, /@long-press="startMessageLongPress/);
 	const settings = read("pages/SettingsPage.vue");
 	assert.doesNotMatch(settings, /watch\(session/);
 	for (const request of settings.matchAll(/api\.updateProfile\(\{([^}]+)\}\)/g)) {
