@@ -1,3 +1,6 @@
+import { classifyStoredSiteIcon } from '../site-icon.js';
+import { normalizeContentType } from '../attachment-metadata.js';
+
 export function isR2ObjectUnavailableError(error) {
 	const message = String(error?.message || error);
 	return (
@@ -116,23 +119,30 @@ export async function fileBelongsToUser(db, key, userId) {
 	return Boolean(results[0]);
 }
 
-export async function canAccessFile(db, key, userId = null) {
+export async function canAccessFile(db, key, userId = null, trustedOrigins = []) {
 	const cleanKey = String(key || "");
 	if (!cleanKey) return false;
 
-	// 头像本来就是公开资料，保持无会话访问，避免登录页和成员列表出现破图。
+	// 头像与当前站点图标是公开资料；未保存的上传仍需上传者认证才能预览。
 	const publicRefs = await db
 		.prepare(
-			`SELECT 1 AS found
-			 WHERE NOT EXISTS (SELECT 1 FROM pending_r2_delete WHERE object_key = ?)
-			   AND (
+			`SELECT (
 			     EXISTS (SELECT 1 FROM users WHERE avatar_key = ? AND deleted_at IS NULL)
 			     OR EXISTS (SELECT 1 FROM channels WHERE avatar_key = ? AND deleted_at IS NULL)
-			   )`,
+			   ) AS public_reference,
+			   (SELECT setting_value FROM site_settings WHERE setting_key = 'site_icon_url') AS site_icon_url,
+			   (SELECT content_type FROM uploaded_files WHERE object_key = ?) AS site_icon_content_type
+			 WHERE NOT EXISTS (SELECT 1 FROM pending_r2_delete WHERE object_key = ?)`,
 		)
-		.bind(cleanKey, cleanKey, cleanKey)
+		.bind(cleanKey, cleanKey, cleanKey, cleanKey)
 		.all();
-	if (publicRefs.results[0]) return true;
+	const refs = publicRefs.results[0];
+	if (!refs) return false;
+	if (refs.public_reference) return true;
+	const icon = classifyStoredSiteIcon(refs.site_icon_url, trustedOrigins);
+	const iconContentType = normalizeContentType(refs.site_icon_content_type);
+	if (icon.kind === 'local' && icon.key === cleanKey &&
+		iconContentType.startsWith('image/') && iconContentType !== 'image/svg+xml') return true;
 	if (!Number.isFinite(Number(userId))) return false;
 
 	// 发送前允许上传者预览；发送后则按消息所在公开群组或成员关系授权。

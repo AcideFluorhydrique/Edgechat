@@ -107,7 +107,7 @@ export function registerUploadRoutes(app) {
       ? authorization.slice('Bearer '.length).trim()
       : new URL(c.req.url).searchParams.get('token') || '';
     const auth = token ? await validateSession(c.env, token) : null;
-    const canRead = await canAccessFile(c.env.DB, key, auth?.ok ? auth.session.userId : null);
+    const canRead = await canAccessFile(c.env.DB, key, auth?.ok ? auth.session.userId : null, [new URL(c.req.url).origin]);
     if (!canRead) {
       return new Response('Forbidden', { status: 403 });
     }
