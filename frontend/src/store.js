@@ -3,11 +3,11 @@ import {
   getStoredNativeServerOrigin,
   isCapacitorAndroid,
   restoreStoredNativeServerOrigin,
-  resolveServerAssetUrl,
   setStoredNativeServerOrigin
 } from './capacitor-platform.ts';
 import { isDemoMode, runtimeSessionToken } from './runtime.js';
 import api from './api.js';
+import { applySiteMetadata } from './site-metadata.js';
 import { hasDocumentSession, isGatewayMode } from './gateway.ts';
 import {
   addAuthInvalidListener,
@@ -16,7 +16,6 @@ import {
   setStoredToken
 } from './auth-storage.js';
 
-const DEFAULT_SITE_ICON_URL = '/logo.svg';
 let loginProbeController;
 
 function collectLoginNetwork(session) {
@@ -51,25 +50,6 @@ function clearAuthState() {
   clearStoredToken();
   state.token = '';
   state.session = null;
-}
-
-function applySiteMetadata(site) {
-  const siteName = String(site?.siteName || 'Edgechat').trim() || 'Edgechat';
-  const siteIconUrl = String(site?.siteIconUrl || '').trim();
-  document.title = siteName;
-
-  let favicon = document.querySelector('link[rel="icon"]');
-  if (!favicon) {
-    favicon = document.createElement('link');
-    favicon.setAttribute('rel', 'icon');
-    document.head.appendChild(favicon);
-  }
-
-  if (siteIconUrl) {
-    favicon.setAttribute('href', resolveServerAssetUrl(siteIconUrl));
-  } else {
-    favicon.setAttribute('href', DEFAULT_SITE_ICON_URL);
-  }
 }
 
 async function loadSite() {
