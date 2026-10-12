@@ -566,6 +566,16 @@ watch(
           </button>
           <button
             type="button"
+            class="right-sidebar-action right-sidebar-action--labeled right-sidebar-action--settings tooltip"
+            :data-tooltip="t('nav.personalSettings')"
+            :aria-label="t('nav.personalSettings')"
+            @click="openSettings"
+          >
+            <Settings :size="20" aria-hidden="true" />
+            <span class="right-sidebar-action__label">{{ t('nav.personalSettings') }}</span>
+          </button>
+          <button
+            type="button"
             class="right-sidebar-action right-sidebar-action--labeled tooltip"
             :class="{ 'right-sidebar-action--notification-active': notificationsEnabled }"
             :data-tooltip="notificationActionLabel"
@@ -1205,6 +1215,10 @@ watch(
   line-height: 1.35;
   white-space: nowrap;
   text-align: center;
+}
+
+.right-sidebar-action--settings .right-sidebar-action__label {
+  white-space: normal;
 }
 
 .tooltip {

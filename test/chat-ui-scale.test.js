@@ -122,6 +122,16 @@ test("聊天侧栏跟随全屏根节点且不污染后台根节点", () => {
 	assert.doesNotMatch(chatPage, /(?:html|body|#app|\.admin-page)\s*{[^}]*zoom:/s);
 });
 
+test("桌面侧栏提供明确的个人设置入口并保留移动端入口", () => {
+	const sidebar = chatPage.slice(chatPage.indexOf('<aside class="right-sidebar">'), chatPage.indexOf('<aside class="left-sidebar">'));
+	assert.match(sidebar, /<button[^>]*class="[^"]*right-sidebar-action--settings[^>]*:data-tooltip="t\('nav\.personalSettings'\)"[^>]*:aria-label="t\('nav\.personalSettings'\)"[^>]*@click="openSettings"\s*>\s*<Settings :size="20" aria-hidden="true" \/>\s*<span class="right-sidebar-action__label">\{\{ t\('nav\.personalSettings'\) \}\}<\/span>/s);
+	assert.match(chatPage, /function openSettings\(\) \{ router\.push\('\/settings'\); \}/);
+	assert.match(getStyleRule(chatPage, ".right-sidebar-action--settings .right-sidebar-action__label"), /white-space:\s*normal;/);
+	assert.match(sidebar, /class="right-sidebar-user tooltip"/);
+	assert.match(mobileDrawer, /@click="emit\('settings'\)"/);
+	assert.match(chatPage, /@settings="navigateFromMobileDrawer\(openSettings\)"/);
+});
+
 	test("桌面端管理后台入口在图标下方显示文字", () => {
 		assert.match(chatPage, /class="right-sidebar-action right-sidebar-action--admin tooltip"/);
 		assert.match(chatPage, /<span class="right-sidebar-action__label">\{\{ t\('nav\.admin'\) \}\}<\/span>/);
