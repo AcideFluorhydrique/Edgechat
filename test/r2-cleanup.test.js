@@ -70,6 +70,24 @@ function createMeasuredD1(database) {
 	};
 }
 
+test("消息保留期默认七天，支持自定义天数，非法值不会误清新消息", async () => {
+	for (const [value, deleted] of [[undefined, 1], ["30", 0], ["1", 2], ["0", 1], ["-1", 1], ["invalid", 1], ["0.5", 1]]) {
+		const database = createDatabase();
+		try {
+			const userId = insertUser(database, "retention-owner");
+			const channelId = scalar(database, "SELECT id FROM channels WHERE name = 'general'");
+			for (const age of ["-10 day", "-2 day", "-1 hour"]) {
+				database.run("INSERT INTO messages (channel_id, sender_id, content, created_at) VALUES (?, ?, 'message', datetime('now', ?))", [channelId, userId, age]);
+			}
+			const summary = await runScheduledGc({ DB: createD1Adapter(database), MESSAGE_RETENTION_DAYS: value });
+			assert.equal(summary.expiredMessagesDeleted, deleted, String(value));
+			assert.equal(scalar(database, "SELECT COUNT(*) FROM messages"), 3 - deleted);
+		} finally {
+			database.close();
+		}
+	}
+});
+
 test("孤儿扫描使用匹配索引，失败对象进入退避且不阻塞后续批次", async () => {
 	const database = createDatabase();
 	const userId = insertUser(database, "gc-owner");

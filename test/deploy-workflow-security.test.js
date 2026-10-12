@@ -60,6 +60,17 @@ test("生产部署在创建或修改云资源前运行完整测试", () => {
 	assert.match(getStep("Run tests"), /run: npm test/);
 });
 
+test("Actions 通过仓库变量配置保留天数，并在云资源操作前拒绝非法值", () => {
+	const validation = getStep("Validate message retention");
+	assert.match(validation, /MESSAGE_RETENTION_DAYS: \$\{\{ vars.MESSAGE_RETENTION_DAYS \|\| '7' \}\}/);
+	assert.match(validation, /\^\[1-9\]\[0-9\]\*\$/);
+	assert.match(validation, /exit 1/);
+	assert.ok(workflow.indexOf("      - name: Validate message retention") < workflow.indexOf("      - name: Ensure Cloudflare resources"));
+	const config = getStep("Generate wrangler config for CI");
+	assert.match(config, /MESSAGE_RETENTION_DAYS: \$\{\{ vars.MESSAGE_RETENTION_DAYS \|\| '7' \}\}/);
+	assert.ok(config.includes('MESSAGE_RETENTION_DAYS = \\"${MESSAGE_RETENTION_DAYS}\\"'));
+});
+
 test("首次部署自动创建密钥，普通部署保留密钥，手动轮换才允许更新", () => {
 	const prepareStep = getStep("Prepare Worker encryption secret");
 	assert.match(prepareStep, /prepare-worker-encryption-secret\.mjs/);

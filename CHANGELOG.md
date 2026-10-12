@@ -8,6 +8,12 @@ EdgeChat 从 `2.1.2` 起正式采用语义化版本。更早的版本号依据�
 - 用户组、群组、用户与邀请采用不同图标，顶栏与侧栏共用 TypeScript 导航定义；三语言同步，搜索和权限过滤隐藏空分类，长标签自动换行。
 - 保留仪表盘默认入口、原有页面与子菜单，无需数据库迁移、新资源或 Secret，沿用 GitHub Actions 部署，不修改 Android。
 
+## 2.16.4 - 2026-10-12
+
+- 新增 `Sync Upstream` Actions，每天两次识别上游 `EdgeChat-Update: stable` / `security` 提交 trailer，合并到最新发布边界并保留 fork 自定义提交；冲突及分支保护不强推，工作流文件更新支持最小权限同步令牌。
+- 自动合并提交跳过 push CI，再显式派发 `Deploy Worker` 避开 GitHub 递归保护；当前 SHA 已部署或运行中不重复派发，失败可在下次检查补派。
+- Actions 支持 `MESSAGE_RETENTION_DAYS` Repository Variable，默认 7 天并拒绝非正整数；修复 GC 中小于一天的配置误取整为 0 天的问题，补充自动更新与清理配置文档和真实 Git/SQLite 回归测试。无需迁移、新 Cloudflare 资源，不修改 Android。
+
 ## 2.16.2 - 2026-10-12
 
 - 聊天与通讯录工作区的桌面侧栏增加齿轮图标和个人设置文字入口，复用现有设置路由、多语言与无障碍标签，保留底部头像和移动导航中的设置入口。

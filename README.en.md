@@ -183,7 +183,7 @@ See [TECHNICAL.md](TECHNICAL.md) for more implementation details.
 
 ### Automatic Deployment with GitHub Actions
 
-Using the GitHub Actions workflow included in the repository is recommended for deployment and subsequent updates.
+Using the GitHub Actions workflow included in the repository is recommended for deployment and subsequent updates. `Sync Upstream` checks twice daily, merges upstream releases marked with the `EdgeChat-Update: stable` / `security` commit trailer, and explicitly dispatches deployment. See the [update guide](https://echat.azora.top/en/guide/updating-fork) for setup and token permissions, and the [deployment guide](https://echat.azora.top/en/guide/actions-deploy) for `MESSAGE_RETENTION_DAYS`.
 
 After completing the Cloudflare authorization and repository configuration described in the documentation, you can manually run `Deploy Worker`, or trigger deployment by pushing code to the `master` or `main` branch. The workflow file is `.github/workflows/deploy-worker.yml`.
 

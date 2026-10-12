@@ -49,6 +49,15 @@ jobs:
         run: npm test
       - name: Build frontend assets
         run: npm run build
+      - name: Validate message retention
+        env:
+          MESSAGE_RETENTION_DAYS: ${{ vars.MESSAGE_RETENTION_DAYS || '7' }}
+        shell: bash
+        run: |
+          if [[ ! "$MESSAGE_RETENTION_DAYS" =~ ^[1-9][0-9]*$ ]]; then
+            echo "MESSAGE_RETENTION_DAYS must be a positive integer (days)."
+            exit 1
+          fi
       - name: Ensure Cloudflare resources
         id: ensure_resources
         env:
@@ -61,8 +70,10 @@ jobs:
         env:
           R2_AVAILABLE: ${{ steps.ensure_resources.outputs.r2_available }}
           R2_BUCKET_NAME: ${{ steps.ensure_resources.outputs.r2_bucket_name }}
+          MESSAGE_RETENTION_DAYS: ${{ vars.MESSAGE_RETENTION_DAYS || '7' }}
         run: |
           cp wrangler.example.toml wrangler.ci.toml
+          sed -i "s|^MESSAGE_RETENTION_DAYS = .*|MESSAGE_RETENTION_DAYS = \"${MESSAGE_RETENTION_DAYS}\"|" wrangler.ci.toml
           sed -i "s|YOUR_D1_DATABASE_ID_HERE|${{ steps.ensure_resources.outputs.d1_database_id }}|g" wrangler.ci.toml
           sed -i "s|YOUR_KV_NAMESPACE_ID_HERE|${{ steps.ensure_resources.outputs.kv_namespace_id }}|g" wrangler.ci.toml
           if [[ "$R2_AVAILABLE" == "true" ]]; then

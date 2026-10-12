@@ -41,9 +41,10 @@ export const ORPHAN_UPLOAD_QUERY = `SELECT object_key, created_at
 	LIMIT ?`;
 
 function toPositiveInteger(value, fallback) {
-	const parsed = Number(value);
+	// 先取整再验证，避免 0.5 天变成 0 天而误清全部历史消息。
+	const parsed = Math.floor(Number(value));
 	if (!Number.isFinite(parsed) || parsed <= 0) return fallback;
-	return Math.floor(parsed);
+	return parsed;
 }
 
 function getGcConfig(env) {
