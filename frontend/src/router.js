@@ -39,11 +39,11 @@ const router = createRouter({
       children: [
         {
           path: 'rbac', name: 'admin-rbac', component: () => import('./pages/AdminRbacPage.vue'),
-          meta: { admin: true, adminTitleKey: 'rbac.title', adminIcon: 'users', transition: 'page' }
+          meta: { admin: true, adminTitleKey: 'rbac.title', adminIcon: 'rbac', transition: 'page' }
         },
         {
           path: 'channels', name: 'admin-channels', component: () => import('./pages/AdminChannelsPage.vue'),
-          meta: { admin: true, adminTitleKey: 'rbac.channels', adminIcon: 'users', transition: 'page' }
+          meta: { admin: true, adminTitleKey: 'rbac.channels', adminIcon: 'channels', transition: 'page' }
         },
         {
           path: '',

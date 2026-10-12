@@ -1,6 +1,12 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
+import { runInNewContext } from 'node:vm';
+import { computed, ref } from 'vue';
+import { adminNavigation, adminRouteIcons } from '../frontend/src/admin/navigation.ts';
+import en from '../frontend/src/locales/en-US.js';
+import zh from '../frontend/src/locales/zh-CN.js';
+import tw from '../frontend/src/locales/zh-TW.js';
 
 function read(relativePath) {
   return readFileSync(new URL(relativePath, import.meta.url), 'utf8');
@@ -11,7 +17,7 @@ const apiSource = read('../frontend/src/api.js');
 const adminApiSource = read('../worker/src/api/admin.js');
 const mainSource = read('../frontend/src/main.js');
 const adminPageSource = read('../frontend/src/pages/AdminPage.vue');
-const navigationSource = read('../frontend/src/admin/navigation.js');
+const navigationSource = read('../frontend/src/admin/navigation.ts');
 const sidebarSource = read('../frontend/src/components/admin/AdminSidebar.vue');
 const dashboardSource = read('../frontend/src/pages/AdminDashboardPage.vue');
 const usersSource = read('../frontend/src/pages/AdminUsersPage.vue');
@@ -70,16 +76,78 @@ test('侧栏包含存储统计并移除消息查看入口', () => {
   assert.match(sidebarSource, /v-show="isGroupOpen\(item\)"/);
 });
 
-test('侧栏维护入口按导航顺序排列且不吸附到底部', () => {
-  const navigationOrder = ['storage', 'invites', 'telegram', 'site', 'maintenance'].map(
-    (id) => navigationSource.indexOf(`id: '${id}'`)
-  );
-  assert.ok(navigationOrder.every((index) => index >= 0));
-  assert.deepEqual(navigationOrder, [...navigationOrder].sort((a, b) => a - b));
-  assert.match(navigationSource, /id: 'maintenance'[\s\S]*separated: true/);
-  assert.match(sidebarSource, /admin-nav-item--separated/);
-  assert.match(adminSidebarStyles, /\.admin-nav-item--separated\s*\{[\s\S]*margin-block-start:/);
-  assert.doesNotMatch(adminSidebarStyles, /\.admin-nav-item--separated\s*\{[\s\S]*margin-block-start:\s*auto/);
+test('仪表盘独立置顶，业务分类与分隔线下的系统入口顺序固定', () => {
+  assert.deepEqual(adminNavigation.map((section) => section.items.map((item) => item.id)), [
+    ['dashboard'],
+    ['rbac', 'channels', 'users', 'invites'],
+    ['telegram', 'instance-bridge'],
+    ['site', 'storage', 'maintenance', 'stealth']
+  ]);
+  assert.equal(adminNavigation[0].labelKey, undefined);
+  assert.equal(adminNavigation[1].labelKey, 'admin.nav.usersAccess');
+  assert.equal(adminNavigation[2].labelKey, 'admin.nav.integrations');
+  assert.deepEqual(adminNavigation.filter((section) => section.separated).map((section) => section.id), ['site-system']);
+  assert.match(sidebarSource, /admin-nav-section--separated/);
+  assert.match(sidebarSource, /:aria-labelledby="section\.label/);
+  assert.match(adminSidebarStyles, /\.admin-nav-section--separated\s*\{\s*padding-block-start:[\s\S]*border-block-start:/);
+  assert.doesNotMatch(adminSidebarStyles, /margin-block-start:\s*auto/);
+});
+
+test('用户相关入口图标彼此区分且顶栏同步同一来源', () => {
+  const items = adminNavigation[1].items;
+  assert.equal(new Set(items.map((item) => item.icon)).size, 4);
+  for (const item of adminNavigation.flatMap((section) => section.items)) {
+    assert.equal(adminRouteIcons[item.id], item.icon);
+  }
+  assert.match(routerSource, /adminTitleKey: 'rbac.title', adminIcon: 'rbac'/);
+  assert.match(routerSource, /adminTitleKey: 'rbac.channels', adminIcon: 'channels'/);
+});
+
+function sidebarNavigation(messages, pages, permissions = []) {
+  const source = sidebarSource.match(/<script setup>([\s\S]*?)<\/script>/)[1].replace(/^import .+;\r?\n/gm, '');
+  return runInNewContext(`${source}\n({ query, filteredNavigation });`, {
+    computed, ref, adminNavigation,
+    useRoute: () => ({ path: '/admin/dashboard', hash: '' }),
+    useRouter: () => ({}),
+    useI18n: () => ({ locale: ref('en-US'), t: (key) => messages[key] }),
+    store: { session: {} },
+    canVisit: (page) => pages.includes(page),
+    can: (permission) => permissions.includes(permission)
+  });
+}
+
+test('侧栏按权限过滤分类和子菜单，隐藏空分类', () => {
+  const { filteredNavigation } = sidebarNavigation(en, ['invites', 'storage'], ['invites.read']);
+  const sections = filteredNavigation.value;
+  assert.equal(sections.length, 2);
+  assert.equal(sections[0].id, 'users-access');
+  assert.equal(sections[0].items[0].children.length, 1);
+  assert.equal(sections[0].items[0].children[0].id, 'registration-links');
+  assert.equal(sections[1].id, 'site-system');
+  assert.equal(sections[1].items[0].id, 'storage');
+});
+
+test('三语言搜索支持分类、页面和子菜单，无结果时不残留空标题', () => {
+  const pages = adminNavigation.flatMap((section) => section.items.map((item) => item.id));
+  for (const messages of [en, zh, tw]) {
+    const { query, filteredNavigation } = sidebarNavigation(messages, pages, ['users.create', 'invites.read']);
+    query.value = messages['admin.nav.integrations'];
+    assert.equal(filteredNavigation.value.length, 1);
+    assert.equal(filteredNavigation.value[0].items.length, 2);
+    query.value = messages['admin.nav.registrationLinks'];
+    assert.equal(filteredNavigation.value.length, 1);
+    assert.equal(filteredNavigation.value[0].items[0].id, 'invites');
+    assert.ok(filteredNavigation.value[0].items[0].children.some((child) => child.id === 'registration-links'));
+    query.value = messages['admin.nav.storage'];
+    assert.equal(filteredNavigation.value[0].items[0].id, 'storage');
+    query.value = 'no-matching-navigation-xyz';
+    assert.equal(filteredNavigation.value.length, 0);
+    query.value = '';
+    assert.equal(filteredNavigation.value.length, 4);
+    assert.equal(messages['admin.nav.site'], messages['admin.nav.siteAppearance']);
+  }
+  assert.match(adminSidebarStyles, /\.admin-nav-item > svg\s*\{\s*flex-shrink: 0;/);
+  assert.match(adminSidebarStyles, /\.admin-nav-item > span\s*\{[\s\S]*?overflow-wrap: anywhere;/);
 });
 
 test('侧栏分组默认收起，主按钮导航且仅箭头负责展开', () => {

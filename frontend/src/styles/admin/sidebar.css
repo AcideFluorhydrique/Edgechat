@@ -95,7 +95,7 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: var(--admin-space-3xs);
+  gap: var(--admin-space-sm);
   overflow-y: auto;
   padding-block: var(--admin-space-sm);
   touch-action: pan-y;
@@ -112,7 +112,7 @@
   color: var(--admin-text);
   font-weight: 500;
   text-align: start;
-  white-space: nowrap;
+  white-space: normal;
   transition: background-color var(--admin-duration), color var(--admin-duration);
 }
 
@@ -121,7 +121,18 @@
   min-height: 44px;
   gap: var(--admin-space-xs);
   padding-inline: var(--admin-space-xs);
+  padding-block: var(--admin-space-2xs);
   font-size: 0.875rem;
+}
+
+.admin-nav-item > svg {
+  flex-shrink: 0;
+}
+
+.admin-nav-item > span {
+  min-width: 0;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
 }
 
 .admin-nav-item:hover,
@@ -149,16 +160,26 @@
   font-weight: 650;
 }
 
-/* 维护入口排在业务栏目之后并单独分隔；按正常文档流排列，不吸附到侧栏底部。 */
-.admin-nav-item--separated {
-  margin-block-start: var(--admin-space-xs);
-  border-block-start: 1px solid var(--admin-border);
-  border-radius: 0;
-  min-height: 52px;
+.admin-nav-section {
+  display: grid;
+  gap: var(--admin-space-3xs);
 }
 
-.admin-nav-item--separated > svg { flex-shrink: 0; }
-.admin-nav-item--separated > span { line-height: 1.45; }
+.admin-nav-section__title {
+  margin: 0;
+  padding: var(--admin-space-2xs) var(--admin-space-xs);
+  color: var(--admin-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.5;
+  letter-spacing: 0;
+}
+
+/* 系统入口作为整体分隔，搜索或权限过滤后仍保留清晰的业务边界。 */
+.admin-nav-section--separated {
+  padding-block-start: var(--admin-space-sm);
+  border-block-start: 1px solid var(--admin-border);
+}
 
 .admin-nav-item--active::before {
   content: '';
@@ -220,6 +241,7 @@
   padding-inline: var(--admin-space-xs);
   color: var(--admin-muted);
   font-size: 0.8125rem;
+  overflow-wrap: anywhere;
 }
 
 .admin-nav-subitem--active {

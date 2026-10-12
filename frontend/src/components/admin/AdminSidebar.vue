@@ -2,7 +2,7 @@
 import { ChevronDown, CircleUserRound, Home, Menu, Search, Settings, X } from '@lucide/vue';
 import { computed, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { adminNavigation } from '../../admin/navigation.js';
+import { adminNavigation } from '../../admin/navigation.ts';
 import { useI18n } from '../../i18n.js';
 import store from '../../store.js';
 import { canVisit, can, firstAdminPage } from '../../authorization.ts';
@@ -17,12 +17,16 @@ const mobileToggle = ref(null);
 const openGroups = ref(new Set());
 
 const localizedNavigation = computed(() =>
-  adminNavigation.filter((item) => canVisit(item.id)).map((item) => ({
-    ...item,
-    label: t(item.labelKey),
-    description: t(item.descriptionKey),
-    children: item.children?.filter((child) => !child.permission || can(child.permission)).map((child) => ({ ...child, label: t(child.labelKey) }))
-  }))
+  adminNavigation.map((section) => ({
+    ...section,
+    label: section.labelKey ? t(section.labelKey) : '',
+    items: section.items.filter((item) => canVisit(item.id)).map((item) => ({
+      ...item,
+      label: t(item.labelKey),
+      description: t(item.descriptionKey),
+      children: item.children?.filter((child) => !child.permission || can(child.permission)).map((child) => ({ ...child, label: t(child.labelKey) }))
+    }))
+  })).filter((section) => section.items.length)
 );
 
 const filteredNavigation = computed(() => {
@@ -32,18 +36,18 @@ const filteredNavigation = computed(() => {
   }
 
   return localizedNavigation.value
-    .map((item) => {
-      const parentMatches = `${item.label} ${item.description}`.toLocaleLowerCase(locale.value).includes(keyword);
-      if (!item.children) {
-        return parentMatches ? item : null;
-      }
-
-      const children = parentMatches
-        ? item.children
-        : item.children.filter((child) => child.label.toLocaleLowerCase(locale.value).includes(keyword));
-      return children.length ? { ...item, children } : null;
-    })
-    .filter(Boolean);
+    .map((section) => ({
+      ...section,
+      items: section.label.toLocaleLowerCase(locale.value).includes(keyword) ? section.items : section.items
+        .map((item) => {
+          const parentMatches = `${item.label} ${item.description}`.toLocaleLowerCase(locale.value).includes(keyword);
+          if (parentMatches) return item;
+          const children = item.children?.filter((child) => child.label.toLocaleLowerCase(locale.value).includes(keyword));
+          return children?.length ? { ...item, children } : null;
+        })
+        .filter(Boolean)
+    }))
+    .filter((section) => section.items.length);
 });
 
 const adminName = computed(() => store.session?.displayName || store.session?.username || t('admin.sidebar.administrator'));
@@ -112,62 +116,71 @@ function navigate(location) {
       </label>
 
       <nav class="admin-nav" :aria-label="t('admin.sidebar.navigation')">
-        <template v-for="item in filteredNavigation" :key="item.id">
-          <button
-            v-if="!item.children"
-            type="button"
-            class="admin-nav-item"
-            :class="{ 'admin-nav-item--active': isPrimaryActive(item), 'admin-nav-item--separated': item.separated }"
-            :aria-current="isPrimaryActive(item) ? 'page' : undefined"
-            @click="navigate(item.to)"
-          >
-            <component :is="item.icon" :size="19" aria-hidden="true" />
-            <span>{{ item.label }}</span>
-          </button>
+        <section
+          v-for="section in filteredNavigation"
+          :key="section.id"
+          class="admin-nav-section"
+          :class="{ 'admin-nav-section--separated': section.separated }"
+          :aria-labelledby="section.label ? `admin-nav-section-${section.id}` : undefined"
+        >
+          <h2 v-if="section.label" :id="`admin-nav-section-${section.id}`" class="admin-nav-section__title">{{ section.label }}</h2>
+          <template v-for="item in section.items" :key="item.id">
+            <button
+              v-if="!item.children"
+              type="button"
+              class="admin-nav-item"
+              :class="{ 'admin-nav-item--active': isPrimaryActive(item) }"
+              :aria-current="isPrimaryActive(item) ? 'page' : undefined"
+              @click="navigate(item.to)"
+            >
+              <component :is="item.icon" :size="19" aria-hidden="true" />
+              <span>{{ item.label }}</span>
+            </button>
 
-          <section v-else class="admin-nav-group" :aria-label="item.label">
-            <div class="admin-nav-group__header">
-              <button
-                type="button"
-                class="admin-nav-item admin-nav-item--group"
-                :class="{ 'admin-nav-item--active': isPrimaryActive(item) }"
-                :aria-current="isPrimaryActive(item) ? 'page' : undefined"
-                @click="navigate(item.to)"
-              >
-                <component :is="item.icon" :size="19" aria-hidden="true" />
-                <span>{{ item.label }}</span>
-              </button>
-              <button
-                type="button"
-                class="admin-nav-group__toggle"
-                :aria-expanded="isGroupOpen(item)"
-                :aria-controls="`admin-nav-children-${item.id}`"
-                :aria-label="t(isGroupOpen(item) ? 'admin.sidebar.collapseGroup' : 'admin.sidebar.expandGroup', { name: item.label })"
-                @click="toggleGroup(item.id)"
-              >
-                <ChevronDown
-                  :size="16"
-                  aria-hidden="true"
-                  :class="{ 'admin-nav-group__chevron--open': isGroupOpen(item) }"
-                />
-              </button>
-            </div>
+            <section v-else class="admin-nav-group" :aria-label="item.label">
+              <div class="admin-nav-group__header">
+                <button
+                  type="button"
+                  class="admin-nav-item admin-nav-item--group"
+                  :class="{ 'admin-nav-item--active': isPrimaryActive(item) }"
+                  :aria-current="isPrimaryActive(item) ? 'page' : undefined"
+                  @click="navigate(item.to)"
+                >
+                  <component :is="item.icon" :size="19" aria-hidden="true" />
+                  <span>{{ item.label }}</span>
+                </button>
+                <button
+                  type="button"
+                  class="admin-nav-group__toggle"
+                  :aria-expanded="isGroupOpen(item)"
+                  :aria-controls="`admin-nav-children-${item.id}`"
+                  :aria-label="t(isGroupOpen(item) ? 'admin.sidebar.collapseGroup' : 'admin.sidebar.expandGroup', { name: item.label })"
+                  @click="toggleGroup(item.id)"
+                >
+                  <ChevronDown
+                    :size="16"
+                    aria-hidden="true"
+                    :class="{ 'admin-nav-group__chevron--open': isGroupOpen(item) }"
+                  />
+                </button>
+              </div>
 
-            <div v-show="isGroupOpen(item)" :id="`admin-nav-children-${item.id}`" class="admin-nav-group__items">
-              <button
-                v-for="child in item.children"
-                :key="child.id"
-                type="button"
-                class="admin-nav-subitem"
-                :class="{ 'admin-nav-subitem--active': isChildActive(item, child) }"
-                :aria-current="isChildActive(item, child) ? 'location' : undefined"
-                @click="navigate({ path: item.to, hash: child.hash })"
-              >
-                {{ child.label }}
-              </button>
-            </div>
-          </section>
-        </template>
+              <div v-show="isGroupOpen(item)" :id="`admin-nav-children-${item.id}`" class="admin-nav-group__items">
+                <button
+                  v-for="child in item.children"
+                  :key="child.id"
+                  type="button"
+                  class="admin-nav-subitem"
+                  :class="{ 'admin-nav-subitem--active': isChildActive(item, child) }"
+                  :aria-current="isChildActive(item, child) ? 'location' : undefined"
+                  @click="navigate({ path: item.to, hash: child.hash })"
+                >
+                  {{ child.label }}
+                </button>
+              </div>
+            </section>
+          </template>
+        </section>
 
         <p v-if="!filteredNavigation.length" class="admin-nav-empty">{{ t('admin.sidebar.noResults') }}</p>
       </nav>

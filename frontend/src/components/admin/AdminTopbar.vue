@@ -2,7 +2,7 @@
 import { Gauge, Settings } from '@lucide/vue';
 import { computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { adminRouteIcons } from '../../admin/navigation.js';
+import { adminRouteIcons } from '../../admin/navigation.ts';
 import { t } from '../../i18n.js';
 import LanguageSwitch from '../ui/LanguageSwitch.vue';
 import { canVisit } from '../../authorization.ts';
