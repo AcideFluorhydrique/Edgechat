@@ -43,6 +43,7 @@ test("Cloudflare 生产凭据只注入实际调用 Cloudflare 的步骤", () => 
 			"Prepare D1 migrations",
 			"Apply D1 migrations",
 			"Ensure admin user (optional)",
+				"Verify login administrator",
 			"Prepare Worker encryption secret",
 			"Deploy worker",
 	]) {
@@ -50,6 +51,16 @@ test("Cloudflare 生产凭据只注入实际调用 Cloudflare 的步骤", () => 
 		assert.match(step, /CLOUDFLARE_API_TOKEN: \$\{\{ secrets\.CLOUDFLARE_API_TOKEN \}\}/);
 		assert.match(step, /CLOUDFLARE_ACCOUNT_ID: \$\{\{ secrets\.CLOUDFLARE_ACCOUNT_ID \}\}/);
 	}
+});
+
+test("Actions 在管理员初始化后、发布前验证可登录超管，并拒绝只填一项凭据", () => {
+	const generation = getStep("Generate admin bootstrap SQL (optional)");
+	assert.match(generation, /elif \[\[ -n "\$EDGECHAT_ADMIN_USERNAME" \|\| -n "\$EDGECHAT_ADMIN_PASSWORD" \]\]/);
+	assert.match(generation, /exit 1/);
+	assert.match(getStep("Verify login administrator"), /prepare-d1-migrations\.mjs --verify-admin/);
+	assert.match(getStep("Verify login administrator"), /EDGECHAT_D1_DATABASE_ID: \$\{\{ steps\.ensure_resources\.outputs\.d1_database_id \}\}/);
+	assert.ok(workflow.indexOf("      - name: Ensure admin user") < workflow.indexOf("      - name: Verify login administrator"));
+	assert.ok(workflow.indexOf("      - name: Verify login administrator") < workflow.indexOf("      - name: Deploy worker"));
 });
 
 test("生产部署在创建或修改云资源前运行完整测试", () => {

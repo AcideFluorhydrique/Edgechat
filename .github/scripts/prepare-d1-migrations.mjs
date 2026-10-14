@@ -8,6 +8,7 @@ import { buildD1MigrationPlan } from "./d1-migration-plan.mjs";
 import { D1_REPAIRS } from "./d1-repair-manifest.mjs";
 import { collectSchemaArtifacts, collectAppliedMigrations, inspectSchema, schemaTables } from "../../worker/src/maintenance/schema-contract.ts";
 import { generateSchemaManifest } from "./generate-schema-manifest.mjs";
+import { verifyAdminBootstrap } from "./generate-admin-bootstrap-sql.mjs";
 
 const API_BASE_URL = "https://api.cloudflare.com/client/v4";
 const OUTPUT_PATH = ".tmp/edgechat-d1-migrations.sql";
@@ -55,6 +56,11 @@ async function queryD1(sql) {
 }
 
 async function main() {
+  if (process.argv.includes("--verify-admin")) {
+    await verifyAdminBootstrap(queryD1);
+    console.log("Active super administrator verified.");
+    return;
+  }
   const manifest = await generateSchemaManifest();
   if (process.argv.includes("--verify")) {
     const result = await inspectSchema(queryD1, manifest);

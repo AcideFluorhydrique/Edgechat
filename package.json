@@ -1,6 +1,6 @@
 {
 	"name": "edgechat",
-	"version": "2.16.5",
+	"version": "2.16.6",
 	"private": true,
 	"type": "module",
 	"scripts": {
@@ -30,7 +30,8 @@
 		"check": "npm run biome:ci && npm run build",
 		"deploy": "npm run build && wrangler deploy",
 		"deploy:demo": "npm run build:demo && wrangler deploy --config wrangler.demo.toml",
-		"d1:apply": "wrangler d1 execute cfchat-db --file ./worker/schema.sql"
+		"d1:apply": "wrangler d1 execute cfchat-db --file ./worker/schema.sql",
+		"admin:bootstrap": "node .github/scripts/generate-admin-bootstrap-sql.mjs"
 	},
 	"dependencies": {
 		"@capacitor/android": "^8.5.1",

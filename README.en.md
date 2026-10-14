@@ -181,6 +181,8 @@ See [TECHNICAL.md](TECHNICAL.md) for more implementation details.
 
 ## Deployment
 
+**First login: there is no default administrator password or public sign-up; the schema SQL does not create accounts.** For Actions, configure `EDGECHAT_ADMIN_USERNAME` / `EDGECHAT_ADMIN_PASSWORD` Repository Secrets. For manual deployment, generate and apply the administrator SQL. See [first administrator setup](docs/admin-bootstrap.md#english) for commands and missing-credential recovery. Administrators can then create users or registration invitations.
+
 ### Automatic Deployment with GitHub Actions
 
 Using the GitHub Actions workflow included in the repository is recommended for deployment and subsequent updates. `Sync Upstream` checks twice daily, merges upstream releases marked with the `EdgeChat-Update: stable` / `security` commit trailer, and explicitly dispatches deployment. See the [update guide](https://echat.azora.top/en/guide/updating-fork) for setup and token permissions, and the [deployment guide](https://echat.azora.top/en/guide/actions-deploy) for `MESSAGE_RETENTION_DAYS`.

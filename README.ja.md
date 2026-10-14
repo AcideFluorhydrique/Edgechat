@@ -172,6 +172,8 @@ GitHub Actions はサーバーサイド暗号化の Worker Secrets を管理し�
 
 ## デプロイ
 
+**初回ログイン：管理者の既定パスワードと公開登録はありません。schema SQL はアカウントを作成しません。** Actions では `EDGECHAT_ADMIN_USERNAME` / `EDGECHAT_ADMIN_PASSWORD` を Repository Secrets に設定し、手動デプロイでは管理者初期化 SQL を生成して実行してください。[初回管理者設定](docs/admin-bootstrap.md#english)にコマンドと設定漏れの対応を記載しています。ログイン後、管理者がユーザーや登録招待を作成します。
+
 ### GitHub Actions による自動デプロイ
 
 デプロイとその後の更新には、リポジトリに組み込まれた GitHub Actions ワークフローの利用を推奨します。`Sync Upstream` は毎日 2 回確認し、コミット末尾の `EdgeChat-Update: stable` / `security` が付いた上流リリースをマージして明示的にデプロイを起動します。初回設定とトークン権限は[更新ガイド](https://echat.azora.top/en/guide/updating-fork)、`MESSAGE_RETENTION_DAYS` は[デプロイガイド](https://echat.azora.top/en/guide/actions-deploy)を参照してください。
