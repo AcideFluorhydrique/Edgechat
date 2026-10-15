@@ -56,6 +56,12 @@ async function fixture(enabled = true) {
 
 test('隐身模式默认关闭，未配置时保留常规站点与登录 API', async () => {
   const f = await fixture(false);
+  const put = f.env.SESSIONS.put.bind(f.env.SESSIONS);
+  let sessionTtl;
+  f.env.SESSIONS.put = async (key, value, options) => {
+    sessionTtl = options.expirationTtl;
+    await put(key, value, options);
+  };
   assert.equal(await getStealthSettings(f.env.DB), null);
   assert.match(await (await f.request('/')).text(), /EdgeChat/);
   assert.equal((await f.request('/api/site')).status, 200);
@@ -64,7 +70,8 @@ test('隐身模式默认关闭，未配置时保留常规站点与登录 API', a
     body: JSON.stringify({ username: 'admin', password: 'test-password' }),
   });
   assert.equal(response.status, 200);
-  assert.match(response.headers.get('set-cookie'), /__Host-session=.*HttpOnly; SameSite=Lax; Max-Age=604800; Secure/);
+  assert.match(response.headers.get('set-cookie'), /__Host-session=.*HttpOnly; SameSite=Lax; Max-Age=2592000; Secure/);
+  assert.equal(sessionTtl, 2592000);
 });
 
 test('未认证网关无品牌、脚本、外部资源、manifest 或构建信息', async () => {
@@ -116,6 +123,7 @@ test('网关登录成功才能读正式页面、静态资源和随机 API，Cook
   });
   assert.equal(response.status, 303);
   assert.equal(response.headers.get('location'), '/');
+  assert.match(response.headers.get('set-cookie'), /Max-Age=2592000; Secure/);
   const cookie = response.headers.get('set-cookie').split(';')[0];
   const page = await f.request('/admin/stealth', { headers: { cookie } });
   const html = await page.text();

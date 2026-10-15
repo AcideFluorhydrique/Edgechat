@@ -1,7 +1,7 @@
 import { authorizationFromRow } from './rbac/authorization.ts';
 const encoder = new TextEncoder();
 
-export const SESSION_TTL_SECONDS = 60 * 60 * 24 * 7;
+export const SESSION_TTL_SECONDS = 60 * 60 * 24 * 30;
 
 function toBase64Url(bytes) {
   const binary = Array.from(bytes, (byte) => String.fromCharCode(byte)).join('');
