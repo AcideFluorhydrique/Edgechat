@@ -282,6 +282,16 @@ test('用户列表搜索明确为本页且保留原分页和权限操作', () =>
   assert.match(dashboardSource, /loading \|\| error \? '—'/);
 });
 
+test('用户组选择位于最右侧操作区，不再增高姓名列', () => {
+  const identityCell = usersSource.match(/<td class="admin-user-identity">([\s\S]*?)<\/td>/)[1];
+  const actionsCell = usersSource.match(/<td class="admin-user-actions"[^>]*>([\s\S]*?)<\/td>/)[1];
+  const usersStyles = read('../frontend/src/styles/admin/users.css');
+  assert.doesNotMatch(identityCell, /UserGroupAssignment/);
+  assert.match(actionsCell, /<UserGroupAssignment[^>]+v-if="store\.session\?\.isSuperAdmin"/);
+  assert.match(actionsCell, /<UserGroupAssignment[^\n]+\/>\s*<\/div>\s*$/);
+  assert.match(usersStyles, /\.admin-user-actions \.group-assignment\s*\{[^}]*margin: 0;[^}]*margin-inline-start: auto;/);
+});
+
 test('管理员消息正文查看的页面、客户端调用与服务端接口均已下线', () => {
   assert.doesNotMatch(routerSource, /AdminMessagesPage|AdminRoomPage|admin-messages|admin-room/);
   assert.doesNotMatch(apiSource, /adminRoomMessages|searchMessages|\/admin\/messages\/search/);

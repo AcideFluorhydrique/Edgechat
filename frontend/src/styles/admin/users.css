@@ -33,7 +33,9 @@
 .admin-user-identity { min-width: 200px; max-width: 340px; overflow-wrap: anywhere; }
 .admin-user-identity > strong { font-weight: 650; }
 .admin-user-identity > .muted { margin-block-start: var(--admin-space-3xs); }
-.admin-user-actions { min-width: 240px; }
+.admin-user-actions { min-width: 320px; }
+/* 分组与行操作并排靠右，避免姓名列额外增高；只调整此列表，不影响用户组成员面板。 */
+.admin-user-actions .group-assignment { margin: 0; margin-inline-start: auto; max-width: 100%; }
 .user-details-trigger { width: 44px; min-height: 44px; padding: 0; }
 .admin-users-empty { height: 144px; text-align: center; }
 

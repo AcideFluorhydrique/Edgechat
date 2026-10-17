@@ -167,7 +167,6 @@ onMounted(async () => {
                   <strong>{{ user.displayName }}</strong>
                   <div class="muted">@{{ user.username }}</div>
                   <div class="muted">{{ t(user.isSuperAdmin ? 'rbac.superAdmin' : user.canAccessAdmin ? 'rbac.subAdmin' : 'rbac.ordinary') }} · {{ user.role?.id === 1 ? t('rbac.ordinary') : user.role?.name }}<span v-if="user.role && !user.role.enabled"> · {{ t('rbac.disabled') }}</span><span v-if="user.managementProtected"> · {{ t('rbac.protected') }}</span></div>
-                  <UserGroupAssignment v-if="store.session?.isSuperAdmin" :key="`${user.id}:${user.authzVersion}`" :user="user" :roles="roles" :has-more-roles="hasMore" :roles-loading="rolesLoading" @more-roles="loadMore" @changed="loadUsers" />
                 </td>
                 <td :data-label="t('users.columns.status')"><span class="admin-status" :class="{ 'admin-status--disabled': user.isDisabled }">{{ userStatus(user) }}</span></td>
                 <td :data-label="t('users.columns.createdAt')">{{ formatDateTime(user.createdAt) }}</td>
@@ -185,6 +184,7 @@ onMounted(async () => {
                     <UiButton v-if="can('users.login_history.read') && canTarget(user)" variant="secondary" size="sm" class="user-details-trigger" :title="t('users.details.open')" :aria-label="t('users.details.open')" @click="openDetails(user)">
                       <UserRoundSearch :size="18" aria-hidden="true" />
                     </UiButton>
+                    <UserGroupAssignment v-if="store.session?.isSuperAdmin" :key="`${user.id}:${user.authzVersion}`" :user="user" :roles="roles" :has-more-roles="hasMore" :roles-loading="rolesLoading" @more-roles="loadMore" @changed="loadUsers" />
                   </div>
                 </td>
               </tr>
