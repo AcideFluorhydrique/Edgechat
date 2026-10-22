@@ -8,9 +8,17 @@ import { normalizeSiteColorTheme } from '../shared/site-theme.ts';
 
 const read = (name) => readFileSync(new URL(`../frontend/src/${name}`, import.meta.url), 'utf8');
 const withoutImports = (source) => source
-  .replace(/^import ['"][^'"]+['"];\n/gm, '')
-  .replace(/^import[\s\S]*?from ['"][^'"]+['"];\n/gm, '');
+  .replace(/^import ['"][^'"]+['"];\r?\n/gm, '')
+  .replace(/^import[\s\S]*?from ['"][^'"]+['"];\r?\n/gm, '');
 const flush = () => new Promise((resolve) => setImmediate(resolve));
+
+// Windows 检出可能使用 CRLF；测试应执行同一段业务逻辑，而不是依赖 Git 的换行设置。
+test('startup test source extraction supports LF and CRLF checkouts', () => {
+  for (const newline of ['\n', '\r\n']) {
+    const source = ["import './styles.css';", 'import {', '  reactive', "} from 'vue';", 'const ready = true;'].join(newline);
+    assert.equal(withoutImports(source), 'const ready = true;');
+  }
+});
 
 function startup({ token = '', native = false, origin = '', documentSession = false, site, session } = {}) {
   const calls = { site: 0, session: 0, metadata: [], themes: [] };
