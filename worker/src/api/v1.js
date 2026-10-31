@@ -91,7 +91,7 @@ export function registerV1Routes(app) {
       loginVerification: await getLoginVerification(c.env.DB),
       limits: {
         maxUploadBytes: Number(c.env.MAX_FILE_SIZE || 20971520),
-        messageRetentionDays: Number(c.env.MESSAGE_RETENTION_DAYS || 15)
+        messageRetentionDays: Number(c.env.MESSAGE_RETENTION_DAYS || 30)
       },
       features: {
         deviceSessions: true,
