@@ -1,6 +1,10 @@
 <div align="center">
   <img src="Edgechat.jpg" alt="EdgeChat" width="640" />
 
+  <p>
+    <a href="https://trendshift.io/repositories/140939?utm_source=trendshift-badge&amp;utm_medium=badge&amp;utm_campaign=badge-trendshift-140939" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/trendshift/repositories/140939/daily?language=JavaScript" alt="aozorae%2FEdgechat | Trendshift" width="250" height="55"/></a>
+  </p>
+
   <h3>Your own chat space, without starting by maintaining a server.</h3>
   <p>Open-source, self-hosted team chat running on Cloudflare</p>
   <p>Real-time group chats and DMs · Two-way Telegram bridging · Voice and files · Server-side encryption for messages and attachments</p>
@@ -125,7 +129,7 @@ This suits teams and communities that already have Telegram groups but also need
 ### 🔌 Connections and Extensions
 
 - Administrator-configured two-way Telegram bridging for public and private groups, including voice message synchronization.
-- Members can connect the configured Telegram bot in Settings to receive plaintext DM and group-mention content. Use `/chats`, tap an existing DM contact, and reply to the prompt to send text without memorizing user IDs. Each alert type can be disabled independently.
+- Members can connect the configured Telegram bot in Settings to receive the first 8 characters of DMs and group mentions with a link to EdgeChat. Use `/chats`, tap an existing DM contact, and reply to the prompt to send text without memorizing user IDs. Each alert type can be disabled independently.
 - WebMCP site tools: in compatible client environments, provides login, conversation queries, message reading, sending, and related capabilities.
 
 ## Privacy and Encryption
@@ -138,7 +142,7 @@ The admin console does not provide an entry point for viewing group or direct-me
 > **This is server-side encryption, not end-to-end encryption.**
 > The Worker decrypts content after checking session permissions. The Cloudflare runtime and the party holding the keys must still be trusted. The absence of a message-viewing entry point in the admin console does not mean that the deployer is technically unable to access the content.
 >
-> Telegram bridging and private notifications send readable message content to Telegram; EdgeChat storage remains encrypted. Disconnect the bot to disable both notifications and DM sending. Long notifications are explicitly truncated; attachments are referenced but must be opened in EdgeChat.
+> Group bridging still synchronizes full messages to Telegram. Private alerts send only the first 8 Unicode characters and a conversation link without login credentials; attachment names stay hidden. Previews remain plaintext, short messages may appear in full, and previously sent full-text copies are not recalled. EdgeChat storage remains encrypted. Disconnect the bot to disable both notifications and DM sending.
 
 <details>
 <summary><strong>Key Management and Rotation</strong></summary>

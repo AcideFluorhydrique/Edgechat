@@ -31,8 +31,8 @@ async function fixture(t, count = 30) {
   env.TELEGRAM_NOTIFICATIONS = { idFromName: name => name, get: () => scheduler };
   const bot = await encryptSecretValue(env, '123456:example-token', 'telegram:bot-token');
   const secret = await encryptSecretValue(env, 'secret', 'telegram:webhook-secret');
-  db.run(`INSERT INTO telegram_bridge_config (id, bot_token_ciphertext, webhook_secret_ciphertext, bot_username)
-    VALUES (1, ?, ?, 'EdgeChatBot')`, [bot, secret]);
+  db.run(`INSERT INTO telegram_bridge_config (id, bot_token_ciphertext, webhook_secret_ciphertext, bot_username, webhook_url)
+    VALUES (1, ?, ?, 'EdgeChatBot', 'https://notification.test/api/integrations/telegram/webhook')`, [bot, secret]);
   const requests = [];
   const originalFetch = globalThis.fetch;
   let response = () => Response.json({ ok: true, result: { message_id: 1 } });
@@ -49,7 +49,7 @@ async function fixture(t, count = 30) {
   };
 }
 async function enqueue(env, senderId, userId, id, kind = 'dm', channel = 17) {
-  // 明文推送在投递时读取真实消息并验证成员，预算测试也需建立对应的最小消息上下文。
+  // 短预览在投递时读取真实消息并验证成员，预算测试也需建立对应的最小消息上下文。
   await env.DB.prepare("INSERT OR IGNORE INTO channels (id, kind, name) VALUES (?, ?, ?)")
     .bind(channel, kind === 'dm' ? 'dm' : 'public', `Private room ${channel}`).run();
   await env.DB.prepare('INSERT OR IGNORE INTO channel_members (channel_id, user_id) VALUES (?, ?), (?, ?)')
@@ -84,7 +84,10 @@ test('通知：并发私信受收件人预算限制，延迟合并，重放不�
   await f.scheduler.alarm();
   assert.equal(f.requests.length, 1);
   assert.equal(f.count("status = 'sent'"), 5);
-  assert.match(f.requests[0].body.text, /message body/);
+  assert.match(f.requests[0].body.text, /message …/);
+  assert.ok(!f.requests[0].body.text.includes('message body'));
+  assert.match(f.requests[0].body.text, /https:\/\/notification\.test\/\?notificationRoomKind=dm&notificationRoomId=17/);
+  assert.equal(f.requests[0].body.link_preview_options.is_disabled, true);
   assert.match(f.requests[0].body.text, /User 1/);
   assert.equal(f.deleted(), 1);
 });

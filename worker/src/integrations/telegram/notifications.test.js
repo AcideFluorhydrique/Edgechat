@@ -96,7 +96,8 @@ test("Telegram binding is private, single-use, and notification deliveries dedup
 		db.run("UPDATE telegram_notification_outbox SET next_attempt_at = datetime('now', '-1 minute')");
 		await deliverTelegramNotification(env);
 		assert.equal(sent.length, 1);
-		assert.ok(sent[0].text.includes(message.content));
+		assert.ok(sent[0].text.includes("Readable…"));
+		assert.ok(!sent[0].text.includes(message.content));
 		assert.equal(sent[0].parse_mode, undefined);
 		assert.equal(sent[0].link_preview_options.is_disabled, true);
 		assert.ok(sent[0].reply_markup.keyboard[0][0].text.includes("Bob"));

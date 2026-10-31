@@ -99,6 +99,7 @@ export async function deliverTelegramNotification(env: NotificationEnv) {
     if (!credentials) throw new Error("Telegram bot unavailable");
     const notification = await buildTelegramNotification(env, {
       ids, userId: candidate.user_id, chatId: candidate.telegram_chat_id, kind: candidate.kind,
+      webhookUrl: credentials.webhookUrl,
     });
     if (notification) {
       await sendTelegramText(credentials.botToken, {

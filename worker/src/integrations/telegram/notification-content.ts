@@ -6,6 +6,7 @@ import { TELEGRAM_CHAT_LIST, telegramDmButton } from "./direct-messages.ts";
 interface NotificationMessage {
   id: number;
   channel_id: number;
+  room_kind: string;
   room_name: string;
   content: string;
   sender_id: number | null;
@@ -13,25 +14,32 @@ interface NotificationMessage {
   source: string;
   external_sender_id: string;
   sender_name: string;
-  attachment_name: string | null;
   attachment_key: string | null;
 }
 
-function shorten(text: string, limit: number) {
-  return text.length <= limit ? text : `${text.slice(0, limit - 14).replace(/[\uD800-\uDBFF]$/, "")}…（更多请在站内查看）`;
+function preview(text: string) {
+  let result = "";
+  let length = 0;
+  // 按 Unicode 码点而非 UTF-16 单元截取，避免切断 emoji；不把余下正文交给 Telegram。
+  for (const character of text.trim()) {
+    if (length === 8) return `${result}…`;
+    result += /\s/u.test(character) ? " " : character;
+    length++;
+  }
+  return result;
 }
 function label(text: string) {
   return String(text || "EdgeChat").replace(/[\r\n]/g, " ").slice(0, 80);
 }
 
 export async function buildTelegramNotification(env: { DB: TelegramDatabase }, {
-  ids, userId, chatId, kind,
-}: { ids: number[]; userId: number; chatId: string; kind: string }) {
+  ids, userId, chatId, kind, webhookUrl,
+}: { ids: number[]; userId: number; chatId: string; kind: string; webhookUrl: string }) {
   // 出队时读取原消息并重新核对成员/绑定/偏好，队列不复制明文，退群或删除后也不会泄露旧正文。
-  const { results } = await env.DB.prepare(`SELECT o.id, o.channel_id, o.room_name,
+  const { results } = await env.DB.prepare(`SELECT o.id, o.channel_id, o.room_name, c.kind AS room_kind,
     m.content, m.sender_id, m.sender_kind, m.source, m.external_sender_id,
     COALESCE(NULLIF(m.external_sender_name, ''), sender.display_name, sender.username, '用户') AS sender_name,
-    m.attachment_name, m.attachment_key
+    m.attachment_key
     FROM telegram_notification_outbox o
     JOIN messages m ON m.id = o.message_id AND m.channel_id = o.channel_id AND m.deleted_at IS NULL
     JOIN channels c ON c.id = o.channel_id AND c.deleted_at IS NULL
@@ -50,15 +58,29 @@ export async function buildTelegramNotification(env: { DB: TelegramDatabase }, {
   if (!results.length) return null;
   const blocks = [];
   const rooms = new Map<number, { id: number; name: string }>();
-  const budget = Math.floor(3500 / results.length);
+  let site: URL | null = null;
+  try {
+    const url = new URL(webhookUrl);
+    // 只从管理员已配置的 HTTPS Webhook 取 origin，丢弃路径、凭据和 query。
+    if (url.protocol === "https:") site = new URL(url.origin);
+  } catch {
+    // 历史配置可能没有 Webhook 地址，此时只发短预览，不猜测域名或生成错误链接。
+  }
   for (const row of results) {
     const content = await decryptMessageContent(env, row.content, {
       channelId: row.channel_id, senderId: row.sender_id ?? 0,
       senderContext: row.sender_kind === "external" ? `${row.source}:${row.external_sender_id}` : "",
     });
     const title = kind === "dm" ? label(row.sender_name) : `${label(row.room_name)} · ${label(row.sender_name)}`;
-    const attachment = row.attachment_key ? `\n[附件：${label(row.attachment_name || "文件")}，请在站内查看]` : "";
-    blocks.push(shorten(`${title}\n${content}${attachment}`, budget));
+    const attachment = row.attachment_key ? "\n[有附件，请在站内查看]" : "";
+    let link = "打开 EdgeChat 查看";
+    if (site) {
+      const url = new URL(site);
+      url.searchParams.set("notificationRoomKind", row.room_kind);
+      url.searchParams.set("notificationRoomId", String(row.channel_id));
+      link += `：${url.href}`;
+    }
+    blocks.push(`${title}\n${preview(content) || "[无文字内容]"}${attachment}\n${link}`);
     if (kind === "dm") rooms.set(row.channel_id, { id: row.channel_id, name: label(row.sender_name) });
   }
   return {

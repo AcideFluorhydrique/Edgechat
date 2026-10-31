@@ -1,6 +1,10 @@
 <div align="center">
   <img src="Edgechat.jpg" alt="EdgeChat" width="640" />
 
+  <p>
+    <a href="https://trendshift.io/repositories/140939?utm_source=trendshift-badge&amp;utm_medium=badge&amp;utm_campaign=badge-trendshift-140939" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/trendshift/repositories/140939/daily?language=JavaScript" alt="aozorae%2FEdgechat | Trendshift" width="250" height="55"/></a>
+  </p>
+
   <h3>自己的聊天空间，不必从维护服务器开始。</h3>
   <p>基于 Cloudflare 的开源自部署团队聊天系统</p>
   <p>实时群聊与私信 · Telegram 双向桥接 · 语音与文件 · 消息与附件服务端加密</p>
@@ -98,7 +102,7 @@
   <tr>
     <td width="50%" valign="top">
       <b>🔔 Telegram 离线提醒</b><br />
-      成员可在设置中绑定 Bot，接收含明文正文的私信和 @ 提醒。在 Bot 输入 /chats 后点选私聊联系人，即可回复提示发送文字，无需记忆用户 ID。
+      成员可在设置中绑定 Bot，接收仅含正文前 8 个字符及站内查看链接的私信和 @ 提醒。在 Bot 输入 /chats 后点选私聊联系人，即可回复提示发送文字，无需记忆用户 ID。
     </td>
     <td width="50%" valign="top">
       <b>🪟 全端一致的体验</b><br />
@@ -138,7 +142,7 @@ EdgeChat 对**新写入的消息正文和新上传的附件**使用 AES-256-GCM 
 > **这是服务端加密，不是端到端加密。**
 > Worker 在通过会话权限校验后解密内容，Cloudflare 运行环境和掌握密钥的部署方仍需要被信任。后台没有消息查看入口，不代表部署者在技术上无法访问内容。
 >
-> 开启 Telegram 桥接或私人通知后，相关消息正文会以可读明文进入 Telegram 会话；站内仍采用服务端加密存储。私人通知可单独关闭，解绑可同时停止通知与 Bot 私聊发送。长通知会明确截断，附件仅提示在站内查看。
+> Telegram 群组桥接仍将完整消息同步到 Telegram；私人通知仅发送正文前 8 个 Unicode 字符及无登录凭据的会话链接，附件不显示名称。短预览仍是明文，短消息可能完整显示，已发送的旧全文副本不会自动撤回；站内仍采用服务端加密存储。私人通知可单独关闭，解绑可同时停止通知与 Bot 私聊发送。
 
 <details>
 <summary><strong>密钥管理与轮换说明</strong></summary>

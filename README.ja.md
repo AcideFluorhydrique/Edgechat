@@ -1,6 +1,10 @@
 <div align="center">
   <img src="Edgechat.jpg" alt="EdgeChat" width="640" />
 
+  <p>
+    <a href="https://trendshift.io/repositories/140939?utm_source=trendshift-badge&amp;utm_medium=badge&amp;utm_campaign=badge-trendshift-140939" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/trendshift/repositories/140939/daily?language=JavaScript" alt="aozorae%2FEdgechat | Trendshift" width="250" height="55"/></a>
+  </p>
+
   <h3>自分のチャットスペースを、サーバーの保守から始める必要はありません。</h3>
   <p>Cloudflare を基盤としたオープンソースのセルフホスト型チームチャットシステム</p>
   <p>リアルタイムのグループチャットとダイレクトメッセージ · Telegram 双方向ブリッジ · 音声とファイル · メッセージと添付ファイルのサーバーサイド暗号化</p>
@@ -129,7 +133,7 @@ EdgeChat は**新たに書き込まれるメッセージ本文と新たにアッ
 > **これはサーバーサイド暗号化であり、エンドツーエンド暗号化ではありません。**
 > Worker はセッション権限を検証した後に内容を復号します。Cloudflare の実行環境と鍵を管理するデプロイ担当者は、引き続き信頼する必要があります。管理画面にメッセージ閲覧入口がないことは、デプロイ担当者が技術的に内容へアクセスできないことを意味しません。
 >
-> Telegram ブリッジや個人通知を有効にすると、本文が読み取り可能な平文で Telegram に送られます。EdgeChat 内の暗号化保存は維持されます。Bot の `/chats` で既存の DM 相手を選び、案内に返信してテキストを送信できます。長い通知は省略を明示し、添付ファイルはサイト内で開きます。連携解除で通知と Bot からの送信を停止できます。
+> グループブリッジは引き続き全文を Telegram に同期します。個人通知は本文の先頭 8 Unicode 文字とログイン情報を含まない会話リンクのみを送り、添付ファイル名は表示しません。短いプレビューも平文であり、短文は全文が表示される場合があります。過去に送信した全文は自動撤回されません。EdgeChat 内の暗号化保存と Bot の `/chats` による DM 送信は維持されます。連携解除で通知と Bot からの送信を停止できます。
 
 <details>
 <summary><strong>鍵の管理とローテーションについて</strong></summary>

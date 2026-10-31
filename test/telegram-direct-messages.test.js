@@ -150,16 +150,21 @@ test("Telegram：旧提示不会发给新目标，重复选择不再生成未登
   assert.equal(f.count(), 0);
 });
 
-test("Telegram：推送读取明文与附件提示、截断；删除/退群/拉黑/关闭偏好后不泄露正文", async t => {
+test("Telegram：推送仅前8个Unicode字符和无凭据会话链接；删除/退群/拉黑/关闭偏好后不泄露正文", async t => {
   const f = await fixture(t);
   await f.select(17);
   await f.post("😀".repeat(1900), { reply_to_message: { message_id: f.sent.at(-1).message_id } });
   const outbox = await f.env.DB.prepare("SELECT id FROM telegram_notification_outbox WHERE user_id = 2").first();
-  const args = { ids: [outbox.id], userId: 2, chatId: "1002", kind: "dm" };
+  const args = { ids: [outbox.id], userId: 2, chatId: "1002", kind: "dm",
+    webhookUrl: "https://chat.test/api/integrations/telegram/webhook?token=must-not-leak" };
   const notification = await buildTelegramNotification(f.env, args);
-  assert.ok(notification.text.includes("😀"));
+  assert.ok(notification.text.includes(`${"😀".repeat(8)}…`));
+  assert.ok(!notification.text.includes("😀".repeat(9)));
+  assert.match(notification.text, /https:\/\/chat\.test\/\?notificationRoomKind=dm&notificationRoomId=17/);
+  assert.ok(!notification.text.includes("must-not-leak"));
+  assert.ok(!notification.text.includes("/api/"));
   assert.ok(notification.text.length <= 4096);
-  assert.match(notification.text, /更多请在站内查看/);
+  assert.match(notification.text, /打开 EdgeChat 查看/);
   assert.equal(await buildTelegramNotification(f.env, { ...args, chatId: "someone-else" }), null);
   f.db.run("UPDATE telegram_notification_users SET dm_enabled = 0 WHERE user_id = 2");
   assert.equal(await buildTelegramNotification(f.env, args), null);
@@ -172,4 +177,27 @@ test("Telegram：推送读取明文与附件提示、截断；删除/退群/拉�
   f.db.run("INSERT INTO channel_members (channel_id, user_id) VALUES (17, 2)");
   f.db.run("UPDATE messages SET deleted_at = CURRENT_TIMESTAMP WHERE channel_id = 17");
   assert.equal(await buildTelegramNotification(f.env, args), null);
+});
+
+test("Telegram：群提及和附件只发短预览，不暴露正文尾部或附件名，非法站点不生成链接", async t => {
+  const f = await fixture(t);
+  f.db.run("INSERT INTO uploaded_files (object_key, owner_user_id) VALUES ('private-key', 1)");
+  f.db.run("INSERT INTO messages (id, channel_id, sender_id, content, attachment_key, attachment_name) VALUES (101, 19, 1, ?, 'private-key', 'secret-filename.pdf')",
+    ["一二三四五六七八绝不发送的秘密尾部"]);
+  f.db.run("INSERT INTO telegram_notification_outbox (id, user_id, channel_id, message_id, kind, room_name) VALUES (201, 2, 19, 101, 'mention', 'Group')");
+  const args = { ids: [201], userId: 2, chatId: "1002", kind: "mention", webhookUrl: "https://chat.test/webhook" };
+  const notification = await buildTelegramNotification(f.env, args);
+  assert.match(notification.text, /一二三四五六七八…/);
+  assert.match(notification.text, /notificationRoomKind=public&notificationRoomId=19/);
+  assert.match(notification.text, /有附件/);
+  for (const secret of ["秘密尾部", "secret-filename", "private-key"]) assert.ok(!notification.text.includes(secret));
+  for (const webhookUrl of ["", "invalid", "http://unsafe.test/webhook", "javascript:alert(1)"]) {
+    const result = await buildTelegramNotification(f.env, { ...args, webhookUrl });
+    assert.ok(!result.text.includes("https://"));
+    assert.ok(!result.text.includes("unsafe.test"));
+  }
+  f.db.run("UPDATE messages SET content = '' WHERE id = 101");
+  assert.match((await buildTelegramNotification(f.env, args)).text, /无文字内容/);
+  f.db.run("UPDATE channels SET kind = 'private' WHERE id = 19");
+  assert.match((await buildTelegramNotification(f.env, args)).text, /notificationRoomKind=private/);
 });
