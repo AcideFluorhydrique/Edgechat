@@ -122,7 +122,7 @@ export default {
   'settings.saveProfile': 'Save profile',
   'settings.securitySection': 'Security',
   'settings.telegramTitle': 'Telegram notifications',
-  'settings.telegramDescription': 'Get alerts for direct messages and group mentions while EdgeChat is closed. Message content is not sent.',
+  'settings.telegramDescription': 'DM and group-mention notifications send plaintext message content to Telegram. After connecting, use /chats in the bot, tap a DM contact and reply to send text. Disabling alerts does not disable sending; disconnect to disable both.',
   'settings.telegramStatusLoading': 'Loading',
   'settings.telegramStatusUnavailable': 'Unavailable',
   'settings.telegramStatusDisconnected': 'Not connected',

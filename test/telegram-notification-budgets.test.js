@@ -48,7 +48,14 @@ async function fixture(t, count = 30) {
     },
   };
 }
-function enqueue(env, senderId, userId, id, kind = 'dm', channel = 17) {
+async function enqueue(env, senderId, userId, id, kind = 'dm', channel = 17) {
+  // 明文推送在投递时读取真实消息并验证成员，预算测试也需建立对应的最小消息上下文。
+  await env.DB.prepare("INSERT OR IGNORE INTO channels (id, kind, name) VALUES (?, ?, ?)")
+    .bind(channel, kind === 'dm' ? 'dm' : 'public', `Private room ${channel}`).run();
+  await env.DB.prepare('INSERT OR IGNORE INTO channel_members (channel_id, user_id) VALUES (?, ?), (?, ?)')
+    .bind(channel, senderId, channel, userId).run();
+  await env.DB.prepare("INSERT OR IGNORE INTO messages (id, channel_id, sender_id, content) VALUES (?, ?, ?, 'message body')")
+    .bind(id, channel, senderId).run();
   return enqueueTelegramNotification(env, { userId, senderId, room: { id: channel, name: 'Private room' }, message: { id }, kind });
 }
 
@@ -77,7 +84,8 @@ test('通知：并发私信受收件人预算限制，延迟合并，重放不�
   await f.scheduler.alarm();
   assert.equal(f.requests.length, 1);
   assert.equal(f.count("status = 'sent'"), 5);
-  assert.doesNotMatch(f.requests[0].body.text, /message|user1/);
+  assert.match(f.requests[0].body.text, /message body/);
+  assert.match(f.requests[0].body.text, /User 1/);
   assert.equal(f.deleted(), 1);
 });
 

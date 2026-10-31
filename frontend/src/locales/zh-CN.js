@@ -101,7 +101,7 @@ export default {
   'settings.saveProfile': '保存资料',
   'settings.securitySection': '安全设置',
   'settings.telegramTitle': 'Telegram 消息通知',
-  'settings.telegramDescription': '关闭 EdgeChat 后，也能收到私信和群聊 @ 提醒。通知不包含消息正文。',
+  'settings.telegramDescription': '私信和群聊 @ 通知将向 Telegram 发送明文正文。绑定后在 Bot 输入 /chats，可点选私聊联系人并回复发送文字；关闭提醒不影响主动发送，解绑后全部停用。',
   'settings.telegramStatusLoading': '正在读取',
   'settings.telegramStatusUnavailable': '暂不可用',
   'settings.telegramStatusDisconnected': '未绑定',

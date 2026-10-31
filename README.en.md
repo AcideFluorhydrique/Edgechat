@@ -125,7 +125,7 @@ This suits teams and communities that already have Telegram groups but also need
 ### 🔌 Connections and Extensions
 
 - Administrator-configured two-way Telegram bridging for public and private groups, including voice message synchronization.
-- Members can connect the configured Telegram bot in Settings to receive direct-message and group-mention alerts while the site is closed. Each alert type can be disabled independently; alerts do not include message bodies.
+- Members can connect the configured Telegram bot in Settings to receive plaintext DM and group-mention content. Use `/chats`, tap an existing DM contact, and reply to the prompt to send text without memorizing user IDs. Each alert type can be disabled independently.
 - WebMCP site tools: in compatible client environments, provides login, conversation queries, message reading, sending, and related capabilities.
 
 ## Privacy and Encryption
@@ -138,7 +138,7 @@ The admin console does not provide an entry point for viewing group or direct-me
 > **This is server-side encryption, not end-to-end encryption.**
 > The Worker decrypts content after checking session permissions. The Cloudflare runtime and the party holding the keys must still be trusted. The absence of a message-viewing entry point in the admin console does not mean that the deployer is technically unable to access the content.
 >
-> When Telegram bridging is enabled, relayed messages also enter the corresponding Telegram conversation.
+> Telegram bridging and private notifications send readable message content to Telegram; EdgeChat storage remains encrypted. Disconnect the bot to disable both notifications and DM sending. Long notifications are explicitly truncated; attachments are referenced but must be opened in EdgeChat.
 
 <details>
 <summary><strong>Key Management and Rotation</strong></summary>
